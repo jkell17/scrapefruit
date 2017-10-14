@@ -1,5 +1,5 @@
 
-ScrapeFruit: HTTP for Humans
+ScrapeFruit
 =========================
 ScrapeFruit is a microframework to build asynchronous webscrapers in Python. Built on top of aiohttp, with inspiration from Flask.
 
