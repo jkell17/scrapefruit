@@ -3,8 +3,8 @@ ScrapeFruit: HTTP for Humans
 =========================
 ScrapeFruit is a microframework to build asynchronous webscrapers in Python. Built on top of aiohttp, with inspiration from Flask.
 
-
-. code-block:: python
+	
+.. code:: python
 	from scrapefruit import ScrapeFruit, Request
 	app = ScrapeFruit()
 	app.config['WAIT'] = 1 # Be slow!
