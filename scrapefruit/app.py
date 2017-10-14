@@ -12,13 +12,13 @@ class ScrapeFruit(object):
 	seen_urls = set()
 
 	default_config = {
-        'DEBUG':                                False,
-        'LOG_FILE':								None,
-        'LOG_LEVEL':							'DEBUG',
-        'OUTPUT_FILE':							'output.jl',
-        'WAIT':									0.5,
-        'TIMEOUT':								10,
-        'MAX_LEVEL':							None,
+        'DEBUG':		False,
+        'LOG_FILE':		None,
+        'LOG_LEVEL':	'DEBUG',
+        'OUTPUT_FILE':	'output.jl',
+        'WAIT':			0.5,
+        'TIMEOUT':		10,
+        'MAX_LEVEL':	None,
     }
 
 	def __init__(self):
