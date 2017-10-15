@@ -1,6 +1,6 @@
 import jsonlines
 
-class Outputter:
+class Exporter:
 
 	def __init__(self, app):
 		self.file = app.config.get("OUTPUT_FILE")

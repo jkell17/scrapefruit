@@ -7,6 +7,10 @@ class Request(object):
 		self.callback = callback
 		self.data = data
 
+		self.method = method
+		self.headers = headers
+		self.body = body
+
 	def __repr__(self):
 		return "{}; Callback:{}".format(self.url, self.callback.__name__)
 
