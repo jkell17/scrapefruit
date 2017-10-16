@@ -32,10 +32,14 @@ class Crawler:
 		await asyncio.sleep(self.config['WAIT'])
 		sem = asyncio.Semaphore(100)
 		with async_timeout.timeout(self.config['TIMEOUT']):
-			async with sem, session.get(request.url) as response:
-				text = await response.text()
-				self.logger.info("Fetched: {}".format(request.url))
-				return Response(text, request.url, request.data)	
+			if request.method == 'GET':
+				async with sem, session.get(request.url) as response:
+					text = await response.text()
+			elif request.method == 'POST':
+				async with sem, session.post(request.url, data = request.body) as response:
+					text = await response.text()
+			self.logger.info("Fetched: {}".format(request.url))
+			return Response(text, request.url, request.data)
 
 	async def process_callback(self, callback, resp):
 		result = callback(resp) # This will either be a dict or a Request object

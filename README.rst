@@ -7,7 +7,7 @@ ScrapeFruit is a microframework to build asynchronous webscrapers in Python. Bui
 
    from scrapefruit import ScrapeFruit, Request
    app = ScrapeFruit()
-   app.config['WAIT'] = 1 # Be slow!
+   app.config['WAIT'] = 1 # Be slow.
 
    @app.start('http://www.thecrimson.com/')
    def start(resp):
@@ -21,3 +21,6 @@ ScrapeFruit is a microframework to build asynchronous webscrapers in Python. Bui
    def callback(resp):
       title = resp.xpath(".//*[@id='top']/text()").extract_first()
       yield {"url": resp.url, "title": title}
+
+   if __name__ == "__main__":
+      app.run()
