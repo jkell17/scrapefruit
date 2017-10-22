@@ -24,22 +24,27 @@ class Crawler:
 		while True:
 			req = await self.queue.get()
 			resp = await self.fetch(session, req)
-			
-			await self.process_callback(req.callback, resp)
+
+			if resp:
+				await self.process_callback(req.callback, resp)
 			self.queue.task_done()
 
 	async def fetch(self, session, request):
 		await asyncio.sleep(self.config['WAIT'])
 		sem = asyncio.Semaphore(100)
-		with async_timeout.timeout(self.config['TIMEOUT']):
-			if request.method == 'GET':
-				async with sem, session.get(request.url) as response:
-					text = await response.text()
-			elif request.method == 'POST':
-				async with sem, session.post(request.url, data = request.body) as response:
-					text = await response.text()
-			self.logger.info("Fetched: {}".format(request.url))
-			return Response(text, request.url, request.data)
+		try:
+			with async_timeout.timeout(self.config['TIMEOUT']):
+				if request.method == 'GET':
+					async with sem, session.get(request.url) as response:
+						text = await response.text()
+				elif request.method == 'POST':
+					async with sem, session.post(request.url, data = request.body) as response:
+						text = await response.text()
+				self.logger.info("Fetched: {}".format(request.url))
+				return Response(text, request.url, request.data)
+		except Exception as err:
+			self.logger.error(err)
+			return None
 
 	async def process_callback(self, callback, resp):
 		result = callback(resp) # This will either be a dict or a Request object
