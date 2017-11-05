@@ -1,7 +1,8 @@
 from parsel import Selector
 from urllib.parse import urljoin
+import types
 
-class Request(object):
+class Request:
 	def __init__(self, url, callback, data = None, method='GET', headers=None, body=None):
 		self.url = url
 		self.callback = callback
@@ -14,7 +15,7 @@ class Request(object):
 	def __repr__(self):
 		return "{}; Callback:{}".format(self.url, self.callback.__name__)
 
-class Response(object):
+class Response:
 	def __init__(self, html, url, data):
 		self.html = html
 		self.url = url
@@ -30,3 +31,6 @@ class Response(object):
 
 	def urljoin(self, url):
 		return urljoin(self.url, url)
+
+	def __repr__(self):
+		return "Response('{}')".format(self.url)
