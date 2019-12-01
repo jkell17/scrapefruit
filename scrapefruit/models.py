@@ -1,4 +1,3 @@
-import types
 from urllib.parse import urljoin
 
 from parsel import Selector

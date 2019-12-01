@@ -1,2 +1,1 @@
-from .app import ScrapeFruit
-from .models import Request, Response
+from .app import ScrapeFruit  # noqa E402

@@ -1,4 +1,5 @@
 import asyncio
+from typing import Set
 
 import aiohttp
 import async_timeout
@@ -7,7 +8,7 @@ from .models import Request, Response
 
 
 class Crawler:
-    seen_urls = set()
+    seen_urls: Set[str] = set()
 
     def __init__(self, queue, logger, output, wait, timeout, single_depth=False):
         self.queue = queue

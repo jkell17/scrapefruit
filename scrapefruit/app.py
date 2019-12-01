@@ -3,14 +3,14 @@ import asyncio
 from .crawler import Crawler
 from .export import Exporter
 from .log import create_logger
-from .models import Request, Response
+from .models import Request
 
 
 class ScrapeFruit:
 
-    queue = asyncio.Queue()
+    queue: asyncio.Queue[Request] = asyncio.Queue()
 
-    test_queue = asyncio.Queue()
+    test_queue: asyncio.Queue[Request] = asyncio.Queue()
 
     default_config = {
         "DEBUG": False,
