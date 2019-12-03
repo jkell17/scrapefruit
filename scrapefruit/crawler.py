@@ -1,32 +1,42 @@
 import asyncio
-from typing import Set
+import logging
+from typing import Callable, Set
 
-import aiohttp
-import async_timeout
+import aiohttp  # type: ignore
+import async_timeout  # type: ignore
 
+from .export import Exporter
 from .models import Request, Response
 
 
 class Crawler:
     seen_urls: Set[str] = set()
 
-    def __init__(self, queue, logger, output, wait, timeout, concurrency):
+    def __init__(
+        self,
+        queue: asyncio.Queue,
+        logger: logging.Logger,
+        exporter: Exporter,
+        wait: float,
+        timeout: float,
+        concurrency: int,
+    ):
         self.queue = queue
         self.logger = logger
-        self.exporter = output
+        self.exporter = exporter
         self.wait = wait
         self.timeout = timeout
         self.concurrency = concurrency
 
         self.sem = asyncio.Semaphore(concurrency)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Empty the queue. Shut it down."""
         while not self.queue.empty():
             self.queue.get_nowait()
             self.queue.task_done()
 
-    async def crawl(self):
+    async def crawl(self) -> None:
         """Startup function. Sets off fetcher and queues"""
         async with aiohttp.ClientSession() as session:
             workers = [
@@ -37,7 +47,7 @@ class Crawler:
             for worker in workers:
                 worker.cancel()
 
-    async def engine(self, session):
+    async def engine(self, session: aiohttp.ClientSession) -> None:
         while True:
             req = await self.queue.get()
             try:
@@ -47,7 +57,7 @@ class Crawler:
                 self.logger.error(err)
             self.queue.task_done()
 
-    async def fetch(self, session, request):
+    async def fetch(self, session: aiohttp.ClientSession, request: Request) -> Response:
         await asyncio.sleep(self.wait)
         with async_timeout.timeout(self.timeout):
             if request.method == "GET":
@@ -61,7 +71,7 @@ class Crawler:
             self.logger.info("Fetched: {}".format(request.url))
             return Response(text, request.url, request.data)
 
-    async def process_callback(self, callback, resp):
+    async def process_callback(self, callback: Callable, resp: Response) -> None:
 
         result = callback(resp)
 

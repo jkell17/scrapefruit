@@ -19,11 +19,10 @@ class ScrapeFruit:
         "CONCURRENCY": 3,
     }
 
-    def __init__(self):
-        self.config = self.default_config
-        self.logger = create_logger(self)
-        self.exporter = Exporter(self)
-
+    def __init__(self, config: dict = {}):
+        self.config = {**config, **self.default_config}
+        self.logger = create_logger(self.config["LOG_LEVEL"], self.config["LOG_FILE"])
+        self.exporter = Exporter(self.config["OUTPUT_FILE"])
         self.queue: asyncio.Queue = asyncio.Queue()
 
     def start(self, urls: List[str]) -> Callable:
@@ -40,7 +39,7 @@ class ScrapeFruit:
 
         return decorator
 
-    def run(self):
+    def run(self) -> None:
         """Main function. Starts loop"""
         loop = asyncio.get_event_loop()
         self.logger.info("Starting crawler")
@@ -58,5 +57,5 @@ class ScrapeFruit:
         loop.close()
         self.exporter.shutdown()
 
-    def end(self):
+    def end(self) -> None:
         self.crawler.shutdown()

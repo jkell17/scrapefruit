@@ -1,8 +1,8 @@
 import sys
-from pathlib import Path  # noqa E402
+from pathlib import Path
 from typing import List
 
-from setuptools import setup
+from setuptools import setup  # type: ignore
 
 assert sys.version_info >= (3, 7, 0), "Requires Python 3.7+"
 
