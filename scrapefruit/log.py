@@ -25,11 +25,11 @@ class ColourizedFormatter(logging.Formatter):
     ):
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
 
-    def color_level_name(self, level_name: str, level_no: int):
+    def color_level_name(self, level_name: str, level_no: int) -> str:
         color = self.level_name_colors[level_no]
         return click.style(level_name, fg=color)
 
-    def formatMessage(self, record):
+    def formatMessage(self, record: logging.LogRecord) -> str:
         levelname = record.levelname
         seperator = " " * (8 - len(record.levelname))
         levelname = self.color_level_name(levelname, record.levelno)
@@ -38,9 +38,7 @@ class ColourizedFormatter(logging.Formatter):
 
 
 def create_logger(log_level: str, log_file: str) -> logging.Logger:
-
     handler = logging.StreamHandler()
-
     handler.setFormatter(
         ColourizedFormatter(
             fmt="%(levelprefix)s %(asctime)s || %(message)s",
