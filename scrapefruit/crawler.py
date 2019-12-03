@@ -71,6 +71,13 @@ class Crawler:
             return Response(text, request.url, request.data)
 
     async def process_callback(self, callback: Callable, resp: Response) -> None:
+        """ Execute callback on response. Write results to Exporter, or
+        add Requests to queue.
+
+        Arguments:
+            callback {Callable} -- Callback function
+            resp {Response} -- Response
+        """
 
         result = callback(resp)
 
@@ -81,13 +88,15 @@ class Crawler:
             return
 
         result = iter(result)
-
         for item in result:
             if isinstance(item, Request):
                 if item.url not in self.seen_urls:
                     await self.queue.put(item)
                     self.seen_urls.add(item.url)
-
             elif isinstance(item, dict):
                 self.exporter.write(item)
                 self.logger.debug("Scraped {}".format(item))
+            else:
+                self.logger.error(
+                    f"`{callback.__name__}` yields a {type(item)}. Can only yield `Request` objects or `dict`"
+                )

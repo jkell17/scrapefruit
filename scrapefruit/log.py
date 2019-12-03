@@ -1,22 +1,57 @@
 import logging
+from typing import Optional
 
-log_levels = {
-    "DEBUG": logging.DEBUG,
-    "INFO": logging.INFO,
-    "WARNING": logging.WARNING,
-    "ERROR": logging.ERROR,
-    "CRITICAL": logging.CRITICAL,
-}
+import click
+
+
+class ColourizedFormatter(logging.Formatter):
+    """
+    A custom log formatter class that outputs
+    the LOG_LEVEL with an appropriate color.
+
+    Based on uvicorn: https://github.com/encode/uvicorn/blob/master/uvicorn/logging.py
+    """
+
+    level_name_colors = {
+        logging.DEBUG: "cyan",
+        logging.INFO: "green",
+        logging.WARNING: "yellow",
+        logging.ERROR: "red",
+        logging.CRITICAL: "bright_red",
+    }
+
+    def __init__(
+        self, fmt: Optional[str] = None, datefmt: Optional[str] = None, style: str = "%"
+    ):
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style)
+
+    def color_level_name(self, level_name: str, level_no: int):
+        color = self.level_name_colors[level_no]
+        return click.style(level_name, fg=color)
+
+    def formatMessage(self, record):
+        levelname = record.levelname
+        seperator = " " * (8 - len(record.levelname))
+        levelname = self.color_level_name(levelname, record.levelno)
+        record.__dict__["levelprefix"] = levelname + ":" + seperator
+        return super().formatMessage(record)
 
 
 def create_logger(log_level: str, log_file: str) -> logging.Logger:
 
-    logging.basicConfig(
-        level=log_levels[log_level],
-        format="%(asctime)s %(levelname)-8s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+    handler = logging.StreamHandler()
+
+    handler.setFormatter(
+        ColourizedFormatter(
+            fmt="%(levelprefix)s %(asctime)s || %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
     )
+
     logger = logging.getLogger("ScrapeFruit.app")
+    logger.addHandler(handler)
+    level_no = getattr(logging, log_level)
+    logger.setLevel(level_no)
 
     file_ = log_file
     if file_:

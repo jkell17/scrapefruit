@@ -1,2 +1,3 @@
 aiohttp==3.6.2
 parsel==1.5.2
+Click==7.0
