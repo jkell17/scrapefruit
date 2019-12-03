@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import Callable, List
 
 from .crawler import Crawler
 from .export import Exporter
@@ -9,8 +9,6 @@ from .models import Request
 
 class ScrapeFruit:
 
-    queue: asyncio.Queue = asyncio.Queue()
-
     default_config = {
         "LOG_FILE": None,
         "LOG_LEVEL": "INFO",
@@ -18,14 +16,17 @@ class ScrapeFruit:
         "WAIT": 0.5,
         "TIMEOUT": 10,
         "MAX_LEVEL": None,
+        "CONCURRENCY": 3,
     }
 
     def __init__(self):
         self.config = self.default_config
         self.logger = create_logger(self)
-        self.export = Exporter(self)
+        self.exporter = Exporter(self)
 
-    def start(self, urls: List[str]):
+        self.queue: asyncio.Queue = asyncio.Queue()
+
+    def start(self, urls: List[str]) -> Callable:
         # This decorator will add Request to either main queue or test queue:
         def decorator(f):
             if isinstance(urls, str):
@@ -39,28 +40,23 @@ class ScrapeFruit:
 
         return decorator
 
-    def _execute(self, queue: asyncio.Queue, exporter):
+    def run(self):
         """Main function. Starts loop"""
         loop = asyncio.get_event_loop()
         self.logger.info("Starting crawler")
         self.crawler = Crawler(
-            queue,
+            self.queue,
             self.logger,
-            exporter,
+            self.exporter,
             wait=self.config["WAIT"],
             timeout=self.config["TIMEOUT"],
+            concurrency=self.config["CONCURRENCY"],
         )
         loop.run_until_complete(self.crawler.crawl())
 
         self.logger.info("Crawler ended")
         loop.close()
-        self.export.shutdown()
-
-    def run(self):
-        self._execute(self.queue, self.export)
-
-    def export_output(self):
-        return self.export.get_output()
+        self.exporter.shutdown()
 
     def end(self):
         self.crawler.shutdown()

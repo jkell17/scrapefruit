@@ -10,12 +10,15 @@ from .models import Request, Response
 class Crawler:
     seen_urls: Set[str] = set()
 
-    def __init__(self, queue, logger, output, wait, timeout):
+    def __init__(self, queue, logger, output, wait, timeout, concurrency):
         self.queue = queue
         self.logger = logger
         self.exporter = output
         self.wait = wait
         self.timeout = timeout
+        self.concurrency = concurrency
+
+        self.sem = asyncio.Semaphore(concurrency)
 
     def shutdown(self):
         """Empty the queue. Shut it down."""
@@ -26,9 +29,13 @@ class Crawler:
     async def crawl(self):
         """Startup function. Sets off fetcher and queues"""
         async with aiohttp.ClientSession() as session:
-            fetcher = asyncio.ensure_future(self.engine(session))
+            workers = [
+                asyncio.create_task(self.engine(session))
+                for i in range(self.concurrency)
+            ]
             await self.queue.join()
-            fetcher.cancel()
+            for worker in workers:
+                worker.cancel()
 
     async def engine(self, session):
         while True:
@@ -42,13 +49,12 @@ class Crawler:
 
     async def fetch(self, session, request):
         await asyncio.sleep(self.wait)
-        sem = asyncio.Semaphore(100)
         with async_timeout.timeout(self.timeout):
             if request.method == "GET":
-                async with sem, session.get(request.url) as response:
+                async with self.sem, session.get(request.url) as response:
                     text = await response.text()
             elif request.method == "POST":
-                async with sem, session.post(
+                async with self.sem, session.post(
                     request.url, data=request.body
                 ) as response:
                     text = await response.text()
