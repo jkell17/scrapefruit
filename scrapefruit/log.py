@@ -10,13 +10,13 @@ log_levels = {
 
 
 def create_logger(app):
+
+    logging.basicConfig(
+        level=log_levels[app.config["LOG_LEVEL"]],
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     logger = logging.getLogger("ScrapeFruit.app")
-
-    log_level = log_levels[app.config["LOG_LEVEL"]]
-    logger.setLevel(log_level)
-
-    default_handler = logging.StreamHandler()
-    logger.addHandler(default_handler)
 
     file_ = app.config["LOG_FILE"]
     if file_:

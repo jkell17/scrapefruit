@@ -75,6 +75,4 @@ class Crawler:
 
             elif isinstance(item, dict):
                 self.exporter.write(item)
-                self.logger.info("Scraped {}".format(item))
-            else:
-                self.logger.info("No item scraped")
+                self.logger.debug("Scraped {}".format(item))

@@ -12,9 +12,8 @@ class ScrapeFruit:
     queue: asyncio.Queue = asyncio.Queue()
 
     default_config = {
-        "DEBUG": False,
         "LOG_FILE": None,
-        "LOG_LEVEL": "DEBUG",
+        "LOG_LEVEL": "INFO",
         "OUTPUT_FILE": "output.jl",
         "WAIT": 0.5,
         "TIMEOUT": 10,
@@ -40,18 +39,16 @@ class ScrapeFruit:
 
         return decorator
 
-    def _execute(self, queue: asyncio.Queue, logger, exporter, single_depth):
+    def _execute(self, queue: asyncio.Queue, exporter):
         """Main function. Starts loop"""
         loop = asyncio.get_event_loop()
         self.logger.info("Starting crawler")
-
         self.crawler = Crawler(
             queue,
-            logger,
+            self.logger,
             exporter,
             wait=self.config["WAIT"],
             timeout=self.config["TIMEOUT"],
-            single_depth=single_depth,
         )
         loop.run_until_complete(self.crawler.crawl())
 
@@ -60,7 +57,7 @@ class ScrapeFruit:
         self.export.shutdown()
 
     def run(self):
-        self._execute(self.queue, self.logger, self.export)
+        self._execute(self.queue, self.export)
 
     def export_output(self):
         return self.export.get_output()
