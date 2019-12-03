@@ -10,15 +10,12 @@ from .models import Request, Response
 class Crawler:
     seen_urls: Set[str] = set()
 
-    def __init__(self, queue, logger, output, wait, timeout, single_depth=False):
+    def __init__(self, queue, logger, output, wait, timeout):
         self.queue = queue
         self.logger = logger
         self.exporter = output
         self.wait = wait
         self.timeout = timeout
-        self.single_depth = (
-            single_depth
-        )  # Used in debug mode. Will not add new urls to the queue.
 
     def shutdown(self):
         """Empty the queue. Shut it down."""
@@ -72,7 +69,7 @@ class Crawler:
 
         for item in result:
             if isinstance(item, Request):
-                if item.url not in self.seen_urls and not self.single_depth:
+                if item.url not in self.seen_urls:
                     await self.queue.put(item)
                     self.seen_urls.add(item.url)
 

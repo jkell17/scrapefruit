@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from .crawler import Crawler
 from .export import Exporter
@@ -8,9 +9,7 @@ from .models import Request
 
 class ScrapeFruit:
 
-    queue: asyncio.Queue[Request] = asyncio.Queue()
-
-    test_queue: asyncio.Queue[Request] = asyncio.Queue()
+    queue: asyncio.Queue = asyncio.Queue()
 
     default_config = {
         "DEBUG": False,
@@ -27,21 +26,7 @@ class ScrapeFruit:
         self.logger = create_logger(self)
         self.export = Exporter(self)
 
-    def test(self, urls):
-        # This decorator will add Request to either main queue or test queue:
-        def decorator(f):
-            if isinstance(urls, str):
-                urls_as_list = [urls]
-            else:
-                urls_as_list = urls
-            for url in urls_as_list:
-                req = Request(url, callback=f)
-                self.test_queue.put_nowait(req)
-            return f
-
-        return decorator
-
-    def start(self, urls):
+    def start(self, urls: List[str]):
         # This decorator will add Request to either main queue or test queue:
         def decorator(f):
             if isinstance(urls, str):
@@ -55,7 +40,7 @@ class ScrapeFruit:
 
         return decorator
 
-    def _execute(self, queue, logger, exporter, single_depth):
+    def _execute(self, queue: asyncio.Queue, logger, exporter, single_depth):
         """Main function. Starts loop"""
         loop = asyncio.get_event_loop()
         self.logger.info("Starting crawler")
@@ -75,19 +60,10 @@ class ScrapeFruit:
         self.export.shutdown()
 
     def run(self):
-        self._execute(self.queue, self.logger, self.export, single_depth=False)
+        self._execute(self.queue, self.logger, self.export)
 
     def export_output(self):
         return self.export.get_output()
 
     def end(self):
         self.crawler.shutdown()
-
-    def run_tests(self):
-        # Set output file to test file
-        self.config["OUTPUT_FILE"] = "test-" + self.config["OUTPUT_FILE"]
-        self.export = Exporter(self)  #
-
-        self._execute(self.test_queue, self.logger, self.export, single_depth=True)
-
-        return self.export_output()
