@@ -5,4 +5,3 @@ scratch.py
 *.egg-info
 build/
 dist/
-

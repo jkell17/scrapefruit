@@ -1,6 +1,5 @@
-from typing import Dict, List
-
 import json  # type: ignore
+from typing import Dict
 
 
 class Exporter:
@@ -10,8 +9,7 @@ class Exporter:
 
     def write(self, item: Dict) -> None:
         self.writer.write(json.dumps(item))
-        self.writer.write('\n')
-
+        self.writer.write("\n")
 
     def shutdown(self) -> None:
         self.writer.close()

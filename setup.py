@@ -10,7 +10,7 @@ CURRENT_DIR = Path(__file__).parent
 
 
 NAME = "scrapefruit-jfk"
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 
 
 def get_requirements() -> List[str]:

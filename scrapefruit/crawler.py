@@ -27,7 +27,6 @@ class Crawler:
         self.wait = wait
         self.timeout = timeout
         self.concurrency = concurrency
-
         self.sem = asyncio.Semaphore(concurrency)
 
     def shutdown(self) -> None:
