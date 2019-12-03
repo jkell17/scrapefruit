@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, List
+from typing import Callable, List, Union
 
 from .crawler import Crawler
 from .export import Exporter
@@ -25,7 +25,7 @@ class ScrapeFruit:
         self.exporter = Exporter(self.config["OUTPUT_FILE"])
         self.queue: asyncio.Queue = asyncio.Queue()
 
-    def start(self, urls: List[str]) -> Callable:
+    def start(self, urls: Union[str, List[str]]) -> Callable:
         # This decorator will add Request to either main queue or test queue:
         def decorator(f):
             if isinstance(urls, str):
