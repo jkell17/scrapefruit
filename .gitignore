@@ -3,3 +3,6 @@ _pycache_
 .mypy_cache/
 scratch.py
 *.egg-info
+build/
+dist/
+
