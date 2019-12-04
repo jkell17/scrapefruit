@@ -1,6 +1,6 @@
 import logging
 
-from scrapefruit import Request, ScrapeFruit
+from scrapefruit import ScrapeFruit
 
 
 def test_set_log_level():
@@ -9,26 +9,19 @@ def test_set_log_level():
     app = ScrapeFruit()
     app.config["LOG_LEVEL"] = LOG_LEVEL
     app.run()
-    app.run()
-
+    app.clean_outputs()
     assert LOG_LEVEL == logging.getLevelName(app.logger.level)
 
 
-def test_sample_scrape():
+def test_log_file():
+    LOG_FILE = "test.log"
 
     app = ScrapeFruit()
-
-    @app.start("http://www.thecrimson.com/")
-    def start(resp):
-        urls = resp.xpath(".//*[@class='article-content']/h2/a/@href").extract()
-        for url in urls:
-            # Crawl additional links
-            yield Request(resp.urljoin(url), callback=callback)
-            # Output results
-            yield {"url": resp.urljoin(url)}
-
-    def callback(resp):
-        title = resp.xpath(".//*[@id='top']/text()").extract_first()
-        yield {"url": resp.url, "title": title}
-
+    app.config["LOG_FILE"] = LOG_FILE
     app.run()
+
+    with open(LOG_FILE) as f:
+        logs = f.read()
+        assert "Starting crawler" in logs
+        assert "Crawler ended" in logs
+    app.clean_outputs()

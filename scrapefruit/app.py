@@ -1,5 +1,6 @@
 import asyncio
-from typing import Callable, List, Union
+from pathlib import Path
+from typing import Callable, List, Optional, Union
 
 from .crawler import Crawler
 from .export import Exporter
@@ -15,7 +16,6 @@ class ScrapeFruit:
         "OUTPUT_FILE": "output.jl",
         "WAIT": 0.5,
         "TIMEOUT": 10,
-        "MAX_LEVEL": None,
         "CONCURRENCY": 3,
     }
 
@@ -72,3 +72,14 @@ class ScrapeFruit:
     def end(self) -> None:
         self.crawler.shutdown()
         self.exporter.shutdown()
+
+    def clean_outputs(self) -> None:
+        """ Delete logs and output file. Useful for testing.
+        """
+
+        def _delete_if_not_none(fn: Optional[str]) -> None:
+            if fn is not None:
+                Path(fn).unlink()
+
+        _delete_if_not_none(self.config["LOG_FILE"])
+        _delete_if_not_none(self.config["OUTPUT_FILE"])
