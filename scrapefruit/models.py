@@ -13,6 +13,7 @@ class Request:
     method: str = "GET"
     headers: Optional[Dict] = None
     body: Optional[Dict] = None
+    attempts: int = 0
 
 
 @dataclass

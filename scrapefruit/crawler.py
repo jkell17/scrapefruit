@@ -26,14 +26,16 @@ class Crawler:
         wait: float,
         timeout: float,
         concurrency: int,
+        max_retries: int,
     ):
         self.logger = logger
         self.exporter = exporter
         self.wait = wait
         self.timeout = timeout
         self.concurrency = concurrency
-        self.sem = asyncio.Semaphore(concurrency)
+        self.max_retries = max_retries
 
+        self.sem = asyncio.Semaphore(concurrency)
         self.rc = ReturnCode.SUCCESS
 
     def shutdown(self, success: bool = True) -> None:
@@ -77,6 +79,7 @@ class Crawler:
 
         while True:
             req = await self.queue.get()
+            req.attempts += 1
 
             # Check if request seen previousy
             # TODO: Should we be concerned that self.seen_urls
@@ -86,18 +89,26 @@ class Crawler:
                 self.logger.warning(f"Skipped duplicate url: {req.url}")
                 self.queue.task_done()
                 continue
-            else:
-                self.seen_urls.add(req.url)
 
             try:
                 resp = await self.fetch(session, req)
                 await self.process_callback(req.callback, resp)
+                self.seen_urls.add(req.url)
+            except aiohttp.client_exceptions.ClientConnectorError:
+                self.logger.warning(f"Unable to fetch: {req.url}")
+                if req.attempts >= self.max_retries:
+                    self.logger.error(
+                        f"Skipping {req.url} after {self.max_retries} attempts"
+                    )
+                else:
+                    await self.queue.put(req)
             except Exception:
-                self.logger.error(f"Error fetching: {req.url}")
+                self.logger.critical(f"Critical error: {req.url}")
                 traceback.print_exc()
                 self.shutdown(success=False)
 
-            self.queue.task_done()
+            finally:
+                self.queue.task_done()
 
     async def fetch(self, session: aiohttp.ClientSession, request: Request) -> Response:
         await asyncio.sleep(self.wait)

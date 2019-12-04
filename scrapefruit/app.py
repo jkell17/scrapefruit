@@ -17,6 +17,7 @@ class ScrapeFruit:
         "WAIT": 0.5,
         "TIMEOUT": 10,
         "CONCURRENCY": 3,
+        "MAX_RETRIES": 2,
     }
 
     def __init__(self, config: dict = {}):
@@ -52,6 +53,7 @@ class ScrapeFruit:
             wait=self.config["WAIT"],
             timeout=self.config["TIMEOUT"],
             concurrency=self.config["CONCURRENCY"],
+            max_retries=self.config["MAX_RETRIES"],
         )
 
         self.logger.info("Starting crawler")
@@ -72,7 +74,7 @@ class ScrapeFruit:
         if rc == ReturnCode.SUCCESS:
             self.logger.info("Crawler ended successfully")
         else:
-            self.logger.error("Crawler ended with error")
+            self.logger.critical("Crawler ended with error")
 
     def end(self) -> None:
         self.exporter.shutdown()
