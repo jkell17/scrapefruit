@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from pathlib import Path
 from typing import Callable, List, Optional
 
@@ -22,8 +23,19 @@ class ScrapeFruit:
 
     def __init__(self, config: dict = {}):
         self.config = {**config, **self.default_config}
-
         self._starting_requests: List[Request] = []
+
+    def _check_valid_config(self):
+        """ Validate that user has not added
+        any new keys, or deleted required ones
+        """
+        default_keys = self.default_config.keys()
+        current_keys = self.config.keys()
+
+        if default_keys != current_keys:
+            msg = f"Config must have the following keys : {list(default_keys)}"
+            self.logger.critical(msg)
+            sys.exit(0)
 
     def crawl(self, url: str) -> Callable:
         # This decorator will add Request to q
@@ -55,6 +67,8 @@ class ScrapeFruit:
         # change settings (i.e. app.config['LOG_LEVEL] = 'DEBUG')
         # after instantiation
         self.logger = create_logger(self.config["LOG_LEVEL"], self.config["LOG_FILE"])
+
+        self._check_valid_config()
         self.exporter = Exporter(self.config["OUTPUT_FILE"])
         self.crawler = Crawler(
             self.logger,
