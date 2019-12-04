@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
-from .crawler import Crawler
+from .crawler import Crawler, ReturnCode
 from .export import Exporter
 from .log import create_logger
 from .models import Request
@@ -64,10 +64,15 @@ class ScrapeFruit:
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            loop.run_until_complete(self.crawler.crawl(self._starting_requests))
+            rc = loop.run_until_complete(self.crawler.crawl(self._starting_requests))
         finally:
             loop.close()
             self.end()
+
+        if rc == ReturnCode.SUCCESS:
+            self.logger.info("Crawler ended successfully")
+        else:
+            self.logger.error("Crawler ended with error")
 
     def end(self) -> None:
         self.exporter.shutdown()

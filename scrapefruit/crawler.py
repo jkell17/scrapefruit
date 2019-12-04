@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import traceback
+from enum import Enum
 from typing import Callable, List, Set
 
 import aiohttp  # type: ignore
@@ -8,6 +9,11 @@ import async_timeout  # type: ignore
 
 from .export import Exporter
 from .models import Request, Response
+
+
+class ReturnCode(Enum):
+    SUCCESS = 0
+    ERROR = 1
 
 
 class Crawler:
@@ -28,23 +34,31 @@ class Crawler:
         self.concurrency = concurrency
         self.sem = asyncio.Semaphore(concurrency)
 
+        self.rc = ReturnCode.SUCCESS
+
     def shutdown(self, success: bool = True) -> None:
         """Empty the queue. Shut it down."""
         while not self.queue.empty():
             self.queue.get_nowait()
             self.queue.task_done()
 
-        if success:
-            self.logger.info("Crawler ended succesfully")
-        else:
-            self.logger.error("Crawler ended with error")
+        # TODO: This feels like it's in the wrong place.
+        if not success:
+            self.rc = ReturnCode.ERROR
 
-    async def crawl(self, requests: List[Request]) -> None:
+    async def crawl(self, requests: List[Request]) -> ReturnCode:
+        """ Crawl a list of requests. Returns a "ReturnCode" about
+        whether succcesful or not.
+
+        Arguments:
+            requests {List[Request]} -- starting requests
+        """
         self.queue: asyncio.Queue = asyncio.Queue()
+
         for request in requests:
             self.queue.put_nowait(request)
 
-        """Startup function. Sets off fetcher and queues"""
+        # Startup function. Sets off fetcher and queues
         async with aiohttp.ClientSession() as session:
             workers = [
                 asyncio.create_task(self.worker(session))
@@ -54,12 +68,20 @@ class Crawler:
             for worker in workers:
                 worker.cancel()
 
+        # TODO: Don't love this. It relies on the fact
+        # that a failure will call self.shutdown(success=False)
+        # and self.rc will be set in that function
+        return self.rc
+
     async def worker(self, session: aiohttp.ClientSession) -> None:
 
         while True:
             req = await self.queue.get()
 
-            # Check if seen request previousy
+            # Check if request seen previousy
+            # TODO: Should we be concerned that self.seen_urls
+            # shared between tasks? What happens if multiple
+            # tasks try to access at same time?
             if req.url in self.seen_urls:
                 self.logger.warning(f"Skipped duplicate url: {req.url}")
                 self.queue.task_done()
@@ -73,7 +95,6 @@ class Crawler:
             except Exception:
                 self.logger.error(f"Error fetching: {req.url}")
                 traceback.print_exc()
-
                 self.shutdown(success=False)
 
             self.queue.task_done()
