@@ -21,8 +21,6 @@ class ScrapeFruit:
 
     def __init__(self, config: dict = {}):
         self.config = {**config, **self.default_config}
-        self.logger = create_logger(self.config["LOG_LEVEL"], self.config["LOG_FILE"])
-        self.exporter = Exporter(self.config["OUTPUT_FILE"])
         self.queue: asyncio.Queue = asyncio.Queue()
 
     def start(self, urls: Union[str, List[str]]) -> Callable:
@@ -41,8 +39,23 @@ class ScrapeFruit:
 
     def run(self) -> None:
         """Main function. Starts loop"""
-        loop = asyncio.get_event_loop()
+
+        # These are set here, because user may
+        # change settings (i.e. app.config['LOG_LEVEL] = 'DEBUG')
+        # after instantiation
+        self.logger = create_logger(self.config["LOG_LEVEL"], self.config["LOG_FILE"])
+        self.exporter = Exporter(self.config["OUTPUT_FILE"])
+
+        # Create a new event loop for each execution
+        # Allows run() to be called multiple times
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
         self.logger.info("Starting crawler")
+        indent = " " * 4
+        for key, val in self.config.items():
+            self.logger.info(f"{indent}{key}: {val}")
+
         self.crawler = Crawler(
             self.queue,
             self.logger,
@@ -54,8 +67,9 @@ class ScrapeFruit:
         loop.run_until_complete(self.crawler.crawl())
 
         self.logger.info("Crawler ended")
-        loop.close()
-        self.exporter.shutdown()
+        # loop.close()
+        self.end()
 
     def end(self) -> None:
         self.crawler.shutdown()
+        self.exporter.shutdown()
