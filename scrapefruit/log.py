@@ -4,10 +4,10 @@ from typing import Optional
 import click
 
 
-class ColourizedFormatter(logging.Formatter):
+class DefaultFormatter(logging.Formatter):
     """
     A custom log formatter class that outputs
-    the LOG_LEVEL with an appropriate color.
+    the LOG_LEVEL with an appropriate color (if use_colors=True)
 
     Based on uvicorn: https://github.com/encode/uvicorn/blob/master/uvicorn/logging.py
     """
@@ -21,9 +21,14 @@ class ColourizedFormatter(logging.Formatter):
     }
 
     def __init__(
-        self, fmt: Optional[str] = None, datefmt: Optional[str] = None, style: str = "%"
+        self,
+        fmt: Optional[str] = None,
+        datefmt: Optional[str] = None,
+        style: str = "%",
+        use_colors=True,
     ):
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
+        self.use_colors = use_colors
 
     def color_level_name(self, level_name: str, level_no: int) -> str:
         color = self.level_name_colors[level_no]
@@ -32,28 +37,38 @@ class ColourizedFormatter(logging.Formatter):
     def formatMessage(self, record: logging.LogRecord) -> str:
         levelname = record.levelname
         seperator = " " * (8 - len(record.levelname))
-        levelname = self.color_level_name(levelname, record.levelno)
+        if self.use_colors:
+            levelname = self.color_level_name(levelname, record.levelno)
         record.__dict__["levelprefix"] = levelname + ":" + seperator
         return super().formatMessage(record)
 
 
-def create_logger(log_level: str, log_file: str) -> logging.Logger:
-    handler = logging.StreamHandler()
-    handler.setFormatter(
-        ColourizedFormatter(
-            fmt="%(levelprefix)s %(asctime)s || %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    )
+def create_logger(log_level: str, log_file: Optional[str]) -> logging.Logger:
+    """ ScrapeFruit logger has a stream handler and an optional log
+    handler
 
+    Arguments:
+        log_level {str} -- Log severity
+        log_file {str} -- Log file
+    """
     logger = logging.getLogger("ScrapeFruit.app")
-    logger.addHandler(handler)
     level_no = getattr(logging, log_level)
     logger.setLevel(level_no)
 
-    file_ = log_file
-    if file_:
-        fileHandler = logging.FileHandler(file_)
+    fmt = "%(levelprefix)s %(asctime)s || %(message)s"
+    datefmt = "%Y-%m-%d %H:%M:%S"
+
+    # Stream handler (with colors)
+    handler = logging.StreamHandler()
+    handler.setFormatter(DefaultFormatter(fmt=fmt, datefmt=datefmt, use_colors=True))
+    logger.addHandler(handler)
+
+    # File handler (no colors)
+    if log_file:
+        fileHandler = logging.FileHandler(log_file)
+        fileHandler.setFormatter(
+            DefaultFormatter(fmt=fmt, datefmt=datefmt, use_colors=False)
+        )
         logger.addHandler(fileHandler)
 
     return logger
