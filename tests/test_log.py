@@ -23,5 +23,4 @@ def test_log_file():
     with open(LOG_FILE) as f:
         logs = f.read()
         assert "Starting crawler" in logs
-        assert "Crawler ended" in logs
     app.clean_outputs()

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from typing import Callable, List, Set
 
 import aiohttp  # type: ignore
@@ -27,11 +28,16 @@ class Crawler:
         self.concurrency = concurrency
         self.sem = asyncio.Semaphore(concurrency)
 
-    def shutdown(self) -> None:
+    def shutdown(self, success: bool = True) -> None:
         """Empty the queue. Shut it down."""
         while not self.queue.empty():
             self.queue.get_nowait()
             self.queue.task_done()
+
+        if success:
+            self.logger.info("Crawler ended succesfully")
+        else:
+            self.logger.error("Crawler ended with error")
 
     async def crawl(self, requests: List[Request]) -> None:
         self.queue: asyncio.Queue = asyncio.Queue()
@@ -64,8 +70,12 @@ class Crawler:
             try:
                 resp = await self.fetch(session, req)
                 await self.process_callback(req.callback, resp)
-            except Exception as err:
-                self.logger.error(err)
+            except Exception:
+                self.logger.error(f"Error fetching: {req.url}")
+                traceback.print_exc()
+
+                self.shutdown(success=False)
+
             self.queue.task_done()
 
     async def fetch(self, session: aiohttp.ClientSession, request: Request) -> Response:
