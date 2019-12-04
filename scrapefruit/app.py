@@ -21,7 +21,8 @@ class ScrapeFruit:
 
     def __init__(self, config: dict = {}):
         self.config = {**config, **self.default_config}
-        self.queue: asyncio.Queue = asyncio.Queue()
+
+        self._starting_requests: List[Request] = []
 
     def start(self, urls: Union[str, List[str]]) -> Callable:
         # This decorator will add Request to either main queue or test queue:
@@ -32,7 +33,7 @@ class ScrapeFruit:
                 urls_as_list = urls
             for url in urls_as_list:
                 req = Request(url, callback=f)
-                self.queue.put_nowait(req)
+                self._starting_requests.append(req)
             return f
 
         return decorator
@@ -57,17 +58,15 @@ class ScrapeFruit:
             self.logger.info(f"{indent}{key}: {val}")
 
         self.crawler = Crawler(
-            self.queue,
             self.logger,
             self.exporter,
             wait=self.config["WAIT"],
             timeout=self.config["TIMEOUT"],
             concurrency=self.config["CONCURRENCY"],
         )
-        loop.run_until_complete(self.crawler.crawl())
-
+        loop.run_until_complete(self.crawler.crawl(self._starting_requests))
         self.logger.info("Crawler ended")
-        # loop.close()
+        loop.close()
         self.end()
 
     def end(self) -> None:

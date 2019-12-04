@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Callable, Set
+from typing import Callable, List, Set
 
 import aiohttp  # type: ignore
 import async_timeout  # type: ignore
@@ -14,14 +14,12 @@ class Crawler:
 
     def __init__(
         self,
-        queue: asyncio.Queue,
         logger: logging.Logger,
         exporter: Exporter,
         wait: float,
         timeout: float,
         concurrency: int,
     ):
-        self.queue = queue
         self.logger = logger
         self.exporter = exporter
         self.wait = wait
@@ -35,7 +33,10 @@ class Crawler:
             self.queue.get_nowait()
             self.queue.task_done()
 
-    async def crawl(self) -> None:
+    async def crawl(self, requests: List[Request]) -> None:
+        self.queue: asyncio.Queue = asyncio.Queue()
+        for request in requests:
+            self.queue.put_nowait(request)
         """Startup function. Sets off fetcher and queues"""
         async with aiohttp.ClientSession() as session:
             workers = [
