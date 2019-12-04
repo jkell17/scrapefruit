@@ -17,7 +17,7 @@ def test_sample_scrape():
 
     app = ScrapeFruit()
 
-    @app.start("http://www.thecrimson.com/")
+    @app.crawl("http://www.thecrimson.com/")
     def start(resp):
         urls = resp.xpath(".//*[@class='article-content']/h2/a/@href").extract()
         for url in urls:

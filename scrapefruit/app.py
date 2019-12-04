@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional
 
 from .crawler import Crawler, ReturnCode
 from .export import Exporter
@@ -25,14 +25,23 @@ class ScrapeFruit:
 
         self._starting_requests: List[Request] = []
 
-    def start(self, urls: Union[str, List[str]]) -> Callable:
-        # This decorator will add Request to either main queue or test queue:
+    def crawl(self, url: str) -> Callable:
+        # This decorator will add Request to q
+        assert isinstance(url, str)
+
         def decorator(f):
-            if isinstance(urls, str):
-                urls_as_list = [urls]
-            else:
-                urls_as_list = urls
-            for url in urls_as_list:
+            req = Request(url, callback=f)
+            self._starting_requests.append(req)
+            return f
+
+        return decorator
+
+    def crawl_many(self, urls: List[str]) -> Callable:
+        # This decorator will add Request to either main queue or test queue:
+        assert isinstance(urls, list)
+
+        def decorator(f):
+            for url in urls:
                 req = Request(url, callback=f)
                 self._starting_requests.append(req)
             return f
