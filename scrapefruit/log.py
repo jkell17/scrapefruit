@@ -13,11 +13,11 @@ class ColourizedFormatter(logging.Formatter):
     """
 
     level_name_colors = {
-        logging.DEBUG: "cyan",
+        logging.DEBUG: "blue",
         logging.INFO: "green",
         logging.WARNING: "yellow",
-        logging.ERROR: "red",
-        logging.CRITICAL: "bright_red",
+        logging.ERROR: "magenta",
+        logging.CRITICAL: "red",
     }
 
     def __init__(
