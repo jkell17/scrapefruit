@@ -37,19 +37,30 @@ class Crawler:
         self.queue: asyncio.Queue = asyncio.Queue()
         for request in requests:
             self.queue.put_nowait(request)
+
         """Startup function. Sets off fetcher and queues"""
         async with aiohttp.ClientSession() as session:
             workers = [
-                asyncio.create_task(self.engine(session))
+                asyncio.create_task(self.worker(session))
                 for i in range(self.concurrency)
             ]
             await self.queue.join()
             for worker in workers:
                 worker.cancel()
 
-    async def engine(self, session: aiohttp.ClientSession) -> None:
+    async def worker(self, session: aiohttp.ClientSession) -> None:
+
         while True:
             req = await self.queue.get()
+
+            # Check if seen request previousy
+            if req.url in self.seen_urls:
+                self.logger.warning(f"Skipped duplicate url: {req.url}")
+                self.queue.task_done()
+                continue
+            else:
+                self.seen_urls.add(req.url)
+
             try:
                 resp = await self.fetch(session, req)
                 await self.process_callback(req.callback, resp)
@@ -91,9 +102,7 @@ class Crawler:
         result = iter(result)
         for item in result:
             if isinstance(item, Request):
-                if item.url not in self.seen_urls:
-                    await self.queue.put(item)
-                    self.seen_urls.add(item.url)
+                await self.queue.put(item)
             elif isinstance(item, dict):
                 self.exporter.write(item)
                 self.logger.debug("Scraped {}".format(item))

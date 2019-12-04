@@ -8,9 +8,9 @@ assert sys.version_info >= (3, 7, 0), "Requires Python 3.7+"
 
 CURRENT_DIR = Path(__file__).parent
 
-MAJOR=0
-MINOR=0
-MICRO=3
+MAJOR = 0
+MINOR = 0
+MICRO = 3
 
 
 NAME = "scrapefruit-jfk"
