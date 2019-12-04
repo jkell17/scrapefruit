@@ -8,9 +8,13 @@ assert sys.version_info >= (3, 7, 0), "Requires Python 3.7+"
 
 CURRENT_DIR = Path(__file__).parent
 
+MAJOR=0
+MINOR=0
+MICRO=3
+
 
 NAME = "scrapefruit-jfk"
-VERSION = "0.0.2"
+VERSION = f"{MAJOR}.{MINOR}.{MICRO}"
 
 
 def get_requirements() -> List[str]:
