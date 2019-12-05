@@ -111,4 +111,6 @@ class ScrapeFruit:
                 Path(fn).unlink()
 
         _delete_if_not_none(self.config["LOG_FILE"])
-        _delete_if_not_none(self.config["OUTPUT_FILE"])
+
+        for file_ in self.exporter.get_all_files():
+            file_.unlink()

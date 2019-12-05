@@ -1,37 +1,41 @@
 import json  # type: ignore
-from typing import Dict, TextIO
+from pathlib import Path
+from typing import Dict, Set, TextIO
 
 from .models import Record
 
 
 class Exporter:
     def __init__(self, output_file: str):
-        self.file = output_file
-        self.default_writer = open(self.file, "w")
-
-        self.out_files: Dict[str, TextIO] = {}
+        self.default_out_file = Path(output_file)
+        self.out_files: Dict[Path, TextIO] = {
+            self.default_out_file: open(self.default_out_file, "w")
+        }
 
     def write_dict(self, item: Dict) -> None:
-        self.default_writer.write(json.dumps(item))
-        self.default_writer.write("\n")
+        fp = self.out_files[self.default_out_file]
+        write_json_line_record(item, fp)
+
+    def get_all_files(self) -> Set[Path]:
+        return set(self.out_files.keys())
 
     def write_record(self, record: Record) -> None:
-        if record.format.upper() == "JSONLINES":
-            formatted_line = json_lines_formater(record.data)
+        save_to_path = Path(record.save_to)
 
+        # Get file pointer
         if record.save_to not in self.out_files:
-            self.out_files[record.save_to] = open(record.save_to, "w")
+            self.out_files[save_to_path] = open(save_to_path, "w")
+        fp = self.out_files[save_to_path]
 
-        fp = self.out_files[record.save_to]
-        fp.write(formatted_line)
-        fp.write("\n")
+        if record.format.upper() == "JSONLINES":
+            write_json_line_record(record.data, fp)
 
     def shutdown(self) -> None:
-        self.default_writer.close()
-
         for val in self.out_files.values():
             val.close()
 
 
-def json_lines_formater(record_dict):
-    return json.dumps(record_dict)
+def write_json_line_record(data, fp):
+    formatted_line = json.dumps(data)
+    fp.write(formatted_line)
+    fp.write("\n")

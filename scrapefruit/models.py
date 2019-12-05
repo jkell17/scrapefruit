@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from urllib.parse import urljoin  # type: ignore
 
 from parsel import Selector  # type: ignore
@@ -34,11 +34,10 @@ class Response:
 
 @dataclass
 class Record:
-    data: Dict
+    data: Dict[str, Any]
     save_to: str
     format: str
 
     def ___post_init__(self):
-
         # Check if valid format
         assert self.format.upper() in ("JSONLINES")
