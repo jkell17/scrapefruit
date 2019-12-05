@@ -30,3 +30,15 @@ class Response:
 
     def urljoin(self, url: str) -> str:
         return urljoin(self.url, url)
+
+
+@dataclass
+class Record:
+    data: Dict
+    save_to: str
+    format: str
+
+    def ___post_init__(self):
+
+        # Check if valid format
+        assert self.format.upper() in ("JSONLINES")

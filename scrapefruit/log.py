@@ -44,7 +44,7 @@ class DefaultFormatter(logging.Formatter):
 
 
 def create_logger(log_level: str, log_file: Optional[str]) -> logging.Logger:
-    """ ScrapeFruit logger has a stream handler and an optional log
+    """ ScrapeFruit logger has a stream handler and an optional file
     handler
 
     Arguments:

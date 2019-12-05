@@ -8,7 +8,7 @@ import aiohttp  # type: ignore
 import async_timeout  # type: ignore
 
 from .export import Exporter
-from .models import Request, Response
+from .models import Record, Request, Response
 
 
 class ReturnCode(Enum):
@@ -136,9 +136,7 @@ class Crawler:
         result = callback(resp)
 
         if result is None:
-            self.logger.warning(
-                "Nothing from {}; Callback({})".format(resp, callback.__name__)
-            )
+            self.logger.warning(f"Nothing from {resp}; Callback({callback.__name__})")
             return
 
         result = iter(result)
@@ -146,7 +144,10 @@ class Crawler:
             if isinstance(item, Request):
                 await self.queue.put(item)
             elif isinstance(item, dict):
-                self.exporter.write(item)
+                self.exporter.write_dict(item)
+                self.logger.debug("Scraped {}".format(item))
+            elif isinstance(item, Record):
+                self.exporter.write_record(item)
                 self.logger.debug("Scraped {}".format(item))
             else:
                 self.logger.error(
