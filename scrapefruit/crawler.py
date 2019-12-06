@@ -146,10 +146,8 @@ class Crawler:
             elif isinstance(item, dict):
                 # Cast as Request
                 self.exporter.write_dict(item)
-                self.logger.debug("Scraped {}".format(item))
             elif isinstance(item, Record):
                 self.exporter.write_record(item)
-                self.logger.debug("Scraped {}".format(item))
             else:
                 self.logger.error(
                     f"`{callback.__name__}` yields a {type(item)}. Can only yield `Request` objects or `dict`"

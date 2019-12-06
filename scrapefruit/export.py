@@ -1,8 +1,11 @@
 import json  # type: ignore
+import logging
 from pathlib import Path
-from typing import Dict, Set, TextIO
+from typing import Dict, Set
 
 from .models import Record
+
+logger = logging.getLogger("ScrapeFruit.app")
 
 
 class Writer:
@@ -19,45 +22,45 @@ class Writer:
 
 class JsonlinesWriter(Writer):
     def write(self, data):
+
+        logger.debug(data)
         formatted_line = json.dumps(data)
+        logger.debug(f"Saved {formatted_line} to {self.filepath}")
         self.opened_fp.write(formatted_line)
         self.opened_fp.write("\n")
+        self.opened_fp.flush()
 
 
 class Exporter:
     def __init__(self, default_out_file: str, default_out_format: str):
+        self.default_out_file = default_out_file
+        self.default_out_format = default_out_format
+
         writer = create_writer(default_out_file, default_out_format)
-
-        self.default_out_file = Path(default_out_file)
-
-        self.out_files: Dict[Path, TextIO] = {
-            self.default_out_file: open(self.default_out_file, "w")
-        }
-
-        self.writers: Dict[Path, Writer] = {self.default_out_file: writer}
+        self.writers: Dict[str, Writer] = {self.default_out_file: writer}
 
     def write_dict(self, item: Dict) -> None:
-        fp = self.out_files[self.default_out_file]
-        write_json_line_record(item, fp)
+        record = Record(
+            data=item,
+            save_to=str(self.default_out_file),
+            format=self.default_out_format,
+        )
+        self.write_record(record)
 
     def get_all_files(self) -> Set[Path]:
-        return set(self.out_files.keys())
+        # Convert to Paths
+        return set([Path(i) for i in self.writers.keys()])
 
     def write_record(self, record: Record) -> None:
-        save_to_path = Path(record.save_to)
 
-        # # Get file pointer
-        if record.save_to not in self.out_files:
-            self.out_files[save_to_path] = open(save_to_path, "w")
-        fp = self.out_files[save_to_path]
+        # Get file pointer
+        if record.save_to not in self.writers:
+            self.writers[record.save_to] = create_writer(record.save_to, record.format)
 
-        if record.format.upper() == "JSONLINES":
-            write_json_line_record(record.data, fp)
+        writer = self.writers[record.save_to]
+        writer.write(record.data)
 
     def shutdown(self) -> None:
-        for val in self.out_files.values():
-            val.close()
-
         for writer in self.writers.values():
             writer.close()
 
