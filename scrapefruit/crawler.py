@@ -144,6 +144,7 @@ class Crawler:
             if isinstance(item, Request):
                 await self.queue.put(item)
             elif isinstance(item, dict):
+                # Cast as Request
                 self.exporter.write_dict(item)
                 self.logger.debug("Scraped {}".format(item))
             elif isinstance(item, Record):

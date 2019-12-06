@@ -14,7 +14,8 @@ class ScrapeFruit:
     default_config = {
         "LOG_FILE": None,
         "LOG_LEVEL": "INFO",
-        "OUTPUT_FILE": "output.jl",
+        "OUT_FORMAT": "jsonlines",
+        "OUT_FILE": "output.jl",
         "WAIT": 0.5,
         "TIMEOUT": 10,
         "CONCURRENCY": 3,
@@ -69,7 +70,7 @@ class ScrapeFruit:
         self.logger = create_logger(self.config["LOG_LEVEL"], self.config["LOG_FILE"])
 
         self._check_valid_config()
-        self.exporter = Exporter(self.config["OUTPUT_FILE"])
+        self.exporter = Exporter(self.config["OUT_FILE"], self.config["OUT_FORMAT"])
         self.crawler = Crawler(
             self.logger,
             self.exporter,
