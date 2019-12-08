@@ -1,7 +1,7 @@
 import json  # type: ignore
 import logging
 from pathlib import Path
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 from .models import Record
 
@@ -22,9 +22,39 @@ class Writer:
 
 class JsonlinesWriter(Writer):
     def write(self, data):
-
-        logger.debug(data)
         formatted_line = json.dumps(data)
+        logger.debug(f"Saved {formatted_line} to {self.filepath}")
+        self.opened_fp.write(formatted_line)
+        self.opened_fp.write("\n")
+        self.opened_fp.flush()
+
+
+class CSVWriter(Writer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.columns: List[str] = []
+
+    def write(self, data):
+
+        columns = sorted([i for i in data.keys()])
+
+        # Formatted line
+        formatted_line = ",".join([f"'{data[i]}'" for i in columns])
+
+        # First record, set header row
+        if len(self.columns) == 0:
+            self.columns = columns
+            header_line = ",".join([f"'{i}'" for i in columns])
+            self.opened_fp.write(header_line)
+            self.opened_fp.write("\n")
+            self.opened_fp.flush()
+
+        if self.columns != columns:
+            logger.error(
+                f"Invalid columns. For CSV format, all items must have the same keys. Skipping {data}"
+            )
+            return
+
         logger.debug(f"Saved {formatted_line} to {self.filepath}")
         self.opened_fp.write(formatted_line)
         self.opened_fp.write("\n")
@@ -74,6 +104,7 @@ def write_json_line_record(data, fp):
 def create_writer(out_file: str, out_format: str) -> Writer:
     if out_format.upper() == "JSONLINES":
         return JsonlinesWriter(Path(out_file))
+    elif out_format.upper() == "CSV":
+        return CSVWriter(Path(out_file))
     else:
-        print(out_format)
         raise ValueError
